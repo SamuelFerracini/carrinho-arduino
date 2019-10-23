@@ -1,76 +1,3 @@
-////const int ProxSensor=3;
-////#define SAIDA 13
-////void setup() {
-////  Serial.begin (9600);
-////  pinMode(SAIDA, OUTPUT);   // setting the pin modes, the "13" stands for the internal Arduino uno internal LED
-////  pinMode(ProxSensor,INPUT); // then we have the out pin from the module
-////}
-////
-////void loop() {
-////  if(digitalRead(ProxSensor)== HIGH)      //Check the sensor output if it's high
-////             {
-////               digitalWrite(SAIDA, LOW);   // Turn the LED on (Yes by writing LOW)
-////               Serial.println("LOW");
-////             }
-////  else
-////            {
-////              digitalWrite(13, HIGH);    // Turn the LED OFF if there's no signal on the ProxSenso
-////              Serial.println("HIGH");
-////             }
-////  delay(100);
-////
-////}
-//
-//
-//
-////void setup() {
-////  Serial.begin (9600);
-////  pinMode(trigPin, OUTPUT);
-////  pinMode(echoPin, INPUT);
-////}
-////
-////
-////void loop() {
-////  digitalWrite(trigPin, LOW);
-////  delayMicroseconds(5);
-////  digitalWrite(trigPin, HIGH);
-////  delayMicroseconds(10);
-////  digitalWrite(trigPin, LOW);
-////
-////  pinMode(echoPin, INPUT);
-////  duration = pulseIn(echoPin, HIGH);
-////
-////  cm = (duration/2) / 29.1;     // Divide by 29.1 or multiply by 0.0343
-////  inches = (duration/2) / 74;   // Divide by 74 or multiply by 0.0135
-////
-////  Serial.print(inches);
-////  Serial.print("in, ");
-////  Serial.print(cm);
-////  Serial.print("cm");
-////  Serial.println();
-////
-////  delay(250);
-////}
-//
-//
-//
-//
-
-//  for(pos = 0; pos < 90; pos++)
-//  {
-//    s.write(pos);
-//  delay(15);
-//  }
-//delay(1000);
-//  for(pos = 90; pos >= 0; pos--)
-//  {
-//    s.write(pos);
-//    delay(15);
-//  }
-//Gira o Motor A no sentido horario
-//
-
-
 int trigPin = 3;    // Trigger
 int echoPin = 2;    // Echo
 long duration, cm, inches;
@@ -82,11 +9,14 @@ long duration, cm, inches;
 #define IN3 6
 #define IN4 7
 #define SAIDA 12
+
+#define SERVO 9 // Porta Digital 6 PWM
 //Ultrasonic ultrassom(pino_trigger, pino_echo);
 long distancia;
 const int ProxSensor = 8;
-//Servo s; // Variável Servo
-//int pos; // Posição Servo
+
+Servo s; // Variável Servo
+int pos; // Posição Servo
 
 
 void setup()
@@ -95,6 +25,8 @@ void setup()
   pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT);
   Serial.begin(9600);
+  s.attach(SERVO);
+  s.write(179); // 0 direita 90 reto 180 esquerda
   pinMode(IN4, OUTPUT);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
@@ -109,25 +41,49 @@ void loop()
 {
   if (detectaChao()) {
     double cm = retornaDistancia();
-
     bool motorLigado = ligaMotor();
     if (motorLigado) {
       while (detectaChao()) {
         cm = retornaDistancia();
-        Serial.println(cm);
         if (cm == 0.00) {
           continue;
         }
-        if (cm < 10) {
+        if (cm < 15) {
           desligaMotor();
+          s.write(0);
+          double dist1 = retornaDistancia();
+          s.write(90);
+          double dist2 = retornaDistancia();
+          
+          s.write(179);
+          double dist3 = retornaDistancia();
+          if(dist1 >= dist2){
+            viraDireita();
+            break;
+            }
           break;
         }
       }
     }
   }
+  delay(1000);
+}
 
 
-  delay(2000);
+bool viraEsquerda() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  return true;
+}
+
+bool viraDireita() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  return true;
 }
 
 double retornaDistancia()
@@ -143,12 +99,17 @@ double retornaDistancia()
 }
 
 bool ligaMotor() {
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, LOW);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
   return true;
 }
 
+
 void desligaMotor() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, HIGH);
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, HIGH);
 
